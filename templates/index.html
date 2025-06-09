@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Chẩn đoán Viêm phổi - AI Medical Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-stethoscope me-2"></i>
+                AI Medical Assistant
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-1"></i>Chẩn đoán
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('history') }}">
+                            <i class="fas fa-history me-1"></i>Lịch sử
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('about') }}">
+                            <i class="fas fa-info-circle me-1"></i>Thông tin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <!-- Header -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h1 class="display-4 text-primary mb-3">
+                    <i class="fas fa-lungs me-3"></i>
+                    Chẩn đoán Viêm phổi từ X-quang
+                </h1>
+                <p class="lead text-muted">
+                    Hệ thống AI hỗ trợ bác sĩ chẩn đoán viêm phổi từ ảnh X-quang ngực
+                </p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Upload Section -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-upload me-2"></i>
+                            Tải lên ảnh X-quang
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Upload Form -->
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="fileInput" class="form-label">Chọn ảnh X-quang ngực:</label>
+                                <input type="file" class="form-control" id="fileInput" name="file" 
+                                       accept=".png,.jpg,.jpeg,.bmp,.tiff" required>
+                                <div class="form-text">
+                                    Định dạng hỗ trợ: PNG, JPG, JPEG, BMP, TIFF (tối đa 16MB)
+                                </div>
+                            </div>
+                            
+                            <!-- Preview Area -->
+                            <div id="imagePreview" class="mb-3" style="display: none;">
+                                <label class="form-label">Xem trước ảnh:</label>
+                                <div class="text-center">
+                                    <img id="previewImg" src="" alt="Preview" class="img-fluid rounded shadow-sm" style="max-height: 300px;">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg w-100" id="analyzeBtn">
+                                <i class="fas fa-microscope me-2"></i>
+                                Phân tích ảnh
+                            </button>
+                        </form>
+                        
+                        <!-- Loading Indicator -->
+                        <div id="loadingIndicator" class="text-center mt-3" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Đang phân tích...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Đang phân tích ảnh, vui lòng đợi...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Kết quả chẩn đoán
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="noResults" class="text-center text-muted">
+                            <i class="fas fa-clipboard-list fa-3x mb-3 opacity-50"></i>
+                            <p>Chưa có kết quả chẩn đoán</p>
+                            <p class="small">Vui lòng tải lên ảnh X-quang để bắt đầu phân tích</p>
+                        </div>
+                        
+                        <div id="resultsContainer" style="display: none;">
+                            <!-- Patient Info -->
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Thông tin phân tích:</h6>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small class="text-muted">Ngày giờ:</small>
+                                        <div id="analysisTime" class="fw-bold"></div>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Tệp tin:</small>
+                                        <div id="fileName" class="fw-bold"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <!-- Diagnosis Result -->
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Kết quả chẩn đoán:</h6>
+                                <div id="diagnosisResult" class="p-3 rounded border">
+                                    <div class="d-flex align-items-center">
+                                        <div id="resultIcon" class="me-3"></div>
+                                        <div>
+                                            <div id="resultText" class="h5 mb-1"></div>
+                                            <div id="confidenceText" class="text-muted"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Confidence Bar -->
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Độ tin cậy:</h6>
+                                <div class="progress" style="height: 20px;">
+                                    <div id="confidenceBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="text-muted">0%</small>
+                                    <small class="text-muted">100%</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Recommendations -->
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Khuyến nghị:</h6>
+                                <div id="recommendations" class="alert alert-info">
+                                    <!-- Recommendations will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary" onclick="saveResult()">
+                                    <i class="fas fa-save me-2"></i>Lưu kết quả
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="printResult()">
+                                    <i class="fas fa-print me-2"></i>In kết quả
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Lưu ý quan trọng
+                    </h6>
+                    <p class="mb-0">
+                        Hệ thống AI này chỉ là công cụ hỗ trợ chẩn đoán. Kết quả cần được bác sĩ chuyên khoa xem xét và xác nhận. 
+                        Không nên dựa hoàn toàn vào kết quả AI để đưa ra quyết định điều trị.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="text-muted mb-0">
+                © 2024 AI Medical Assistant. Phát triển để hỗ trợ chẩn đoán y khoa.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch sử Chẩn đoán - AI Medical Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-stethoscope me-2"></i>
+                AI Medical Assistant
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">
+                            <i class="fas fa-home me-1"></i>Chẩn đoán
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('history') }}">
+                            <i class="fas fa-history me-1"></i>Lịch sử
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('about') }}">
+                            <i class="fas fa-info-circle me-1"></i>Thông tin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container my-5">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="display-5 text-primary mb-3">
+                    <i class="fas fa-history me-3"></i>
+                    Lịch sử Chẩn đoán
+                </h1>
+                <p class="lead text-muted">
+                    Xem lại các kết quả chẩn đoán trước đây
+                </p>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm theo tên file...">
+                </div>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <button class="btn btn-outline-danger" onclick="clearHistory()">
+                    <i class="fas fa-trash me-2"></i>Xóa tất cả lịch sử
+                </button>
+                <button class="btn btn-outline-primary ms-2" onclick="exportHistory()">
+                    <i class="fas fa-download me-2"></i>Xuất Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- History Content -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            Danh sách các lần chẩn đoán
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- No History Message -->
+                        <div id="noHistory" class="text-center text-muted py-5" style="display: none;">
+                            <i class="fas fa-clipboard-list fa-4x mb-3 opacity-50"></i>
+                            <h5>Chưa có lịch sử chẩn đoán</h5>
+                            <p>Hãy thực hiện chẩn đoán đầu tiên để xem lịch sử tại đây</p>
+                            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                <i class="fas fa-microscope me-2"></i>Bắt đầu chẩn đoán
+                            </a>
+                        </div>
+
+                        <!-- History Table -->
+                        <div id="historyTable" style="display: none;">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>STT</th>
+                                            <th>Ngày giờ</th>
+                                            <th>Tên file</th>
+                                            <th>Kết quả</th>
+                                            <th>Độ tin cậy</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">
+                                        <!-- History items will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Pagination -->
+                            <nav aria-label="History pagination" class="mt-3">
+                                <ul class="pagination justify-content-center" id="historyPagination">
+                                    <!-- Pagination will be populated by JavaScript -->
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="fas fa-chart-bar fa-2x text-primary mb-2"></i>
+                        <h5 class="card-title">Tổng số lần</h5>
+                        <h3 class="text-primary" id="totalCount">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mt-3 mt-md-0">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <h5 class="card-title">Bình thường</h5>
+                        <h3 class="text-success" id="normalCount">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mt-3 mt-md-0">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                        <h5 class="card-title">Viêm phổi</h5>
+                        <h3 class="text-danger" id="pneumoniaCount">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mt-3 mt-md-0">
+                <div class="card text-center shadow-sm">
+                    <div class="card-body">
+                        <i class="fas fa-percentage fa-2x text-info mb-2"></i>
+                        <h5 class="card-title">Độ tin cậy TB</h5>
+                        <h3 class="text-info" id="avgConfidence">0%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for History Item Details -->
+    <div class="modal fade" id="historyDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Chi tiết kết quả chẩn đoán
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="historyDetailBody">
+                    <!-- Details will be populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" onclick="printHistoryItem()">
+                        <i class="fas fa-print me-2"></i>In kết quả
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="text-muted mb-0">
+                © 2024 AI Medical Assistant. Phát triển để hỗ trợ chẩn đoán y khoa.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/history.js') }}"></script>
+</body>
+</html>
